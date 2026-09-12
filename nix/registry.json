@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "flakes": [
+    {
+      "from": {
+        "type": "github",
+        "owner": "PixarAnimationStudios",
+        "repo": "OpenUSD"
+      },
+      "to": {
+        "type": "git",
+        "url": "https://github.com/PixarAnimationStudios/OpenUSD.git"
+      }
+    }
+  ],
+  "nixConfig": {
+    "substituters": [
+      "https://cache.nixos.org/"
+    ]
+  }
+}

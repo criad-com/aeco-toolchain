@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.24)
+project(aecoIfcGeomSmoke LANGUAGES CXX)
+find_package(IfcOpenShell CONFIG REQUIRED)
+add_executable(aeco-ifcgeom-smoke main.cpp)
+target_compile_features(aeco-ifcgeom-smoke PRIVATE cxx_std_17)
+target_compile_definitions(aeco-ifcgeom-smoke PRIVATE IFOPSH_WITH_OPENCASCADE IFC_SHARED_BUILD)
+target_link_libraries(aeco-ifcgeom-smoke PRIVATE
+    IfcOpenShell::IfcGeom IfcOpenShell::geometry_kernel_opencascade)
+include(CTest)
+add_test(NAME extruded-wall COMMAND aeco-ifcgeom-smoke "${CMAKE_CURRENT_SOURCE_DIR}/wall.ifc")

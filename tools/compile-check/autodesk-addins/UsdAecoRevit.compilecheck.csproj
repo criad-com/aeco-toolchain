@@ -1,0 +1,76 @@
+<!--
+  OFF-WINDOWS COMPILE-CHECK for the Revit add-in (addins-codex/UsdAecoRevit).
+
+  Purpose: give fleet CI an instant compile-check of the Revit add-in sources
+  WITHOUT a Windows host, by compiling them against the vendored Autodesk
+  RevitAPI/RevitAPIUI reference assemblies. This project NEVER runs; the add-in
+  still only *runs* on Windows inside Revit. It is a syntax/type/API-surface
+  gate only.
+
+  Design notes:
+    * Reference-only: the Autodesk DLLs are <Reference Private=false> so nothing
+      is copied or redistributed. They are proprietary; see
+      vendor/autodesk-refs/README.md.
+    * Self-contained: rather than a cross-repo ProjectReference (which drags in
+      the whole solution's restore graph and TFM matrix), we compile the add-in
+      *.cs sources AND the AecoLandingC.Interop *.cs sources in place. This
+      isolates the question "do the add-in sources still type-check against the
+      Autodesk API?" which is exactly what CI wants to know early.
+    * EnableWindowsTargeting=true lets net10.0-windows (+ WPF ref pack) restore
+      and compile on macOS/Linux. Verified with .NET SDK 10.0.400 on arm64 mac.
+    * Sources are located via $(AddinsRepo), defaulting to a sibling checkout of
+      the addins-codex repo. Override with -p:AddinsRepo=/path or the env var.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <!-- Compile check only: never produce a runnable/loadable artifact. -->
+    <OutputType>Library</OutputType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- Revit 2027's API closure surfaces MSB3277 version conflicts as messages,
+         mirroring the real csproj so CI does not fail on the known warning. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+
+    <!-- Repo containing the add-in sources (sibling checkout by default). -->
+    <AddinsRepo Condition="'$(AddinsRepo)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\addins-codex</AddinsRepo>
+    <RevitSrc>$(AddinsRepo)\UsdAecoRevit</RevitSrc>
+    <InteropSrc>$(AddinsRepo)\AecoLandingC.Interop</InteropSrc>
+
+    <!-- Vendored Autodesk reference assemblies (fetched by tools/fetch-autodesk-refs.sh). -->
+    <VendorDir Condition="'$(VendorDir)' == ''">$(MSBuildThisFileDirectory)..\..\..\vendor\autodesk-refs</VendorDir>
+    <RevitRefDir Condition="'$(RevitRefDir)' == ''">$(VendorDir)\revit-2027</RevitRefDir>
+  </PropertyGroup>
+
+  <Target Name="RequireVendoredRevitApi" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(RevitRefDir)\RevitAPI.dll') or !Exists('$(RevitRefDir)\RevitAPIUI.dll')"
+           Text="Vendored Revit reference assemblies not found under '$(RevitRefDir)'. Run tools/fetch-autodesk-refs.sh (or set RevitRefDir/VendorDir)." />
+    <Error Condition="!Exists('$(RevitSrc)')"
+           Text="Revit add-in sources not found at '$(RevitSrc)'. Set -p:AddinsRepo=/path/to/addins-codex (sibling checkout expected)." />
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitRefDir)\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitRefDir)\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- The managed facade the add-in calls into (compiled in place, not linked). -->
+  <ItemGroup>
+    <Compile Include="$(InteropSrc)\*.cs" />
+    <Compile Include="$(AddinsRepo)\Aeco.Addins.Core\*.cs" />
+    <!-- Full add-in source set, including the API-dependent walkers/commands. -->
+    <Compile Include="$(RevitSrc)\*.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,44 @@
+Static monolith: compile core libraries with empty ARCH_EXPORT (PXR_STATIC).
+
+On Nix (ELF/Mach-O) the embed shim keeps its public surface to the C ABI with a
+version script / exported-symbols list — that mechanism can SUBTRACT symbols, so
+the internally namespaced static USD monolith can be compiled with its normal
+ARCH_EXPORT (default-visibility) marks and the shim link simply hides them.
+
+On Windows (PE/COFF) there is no subtractive mechanism: a module-definition file
+(exports.def) UNIONS with every __declspec(dllexport) mark carried by the linked
+objects — it cannot remove them. USD's monolithic build path deliberately does
+NOT define PXR_STATIC (it targets the SHARED monolith usd_ms.dll, where the
+dllexport marks are correct), so a STATIC monolith usd_m.lib inherits dllexport
+on every ARCH_EXPORT symbol. Linking that whole-archive into aecoLandingC.dll
+then leaks the entire USD symbol surface (~12k symbols) through the .def union,
+defeating the exactly-18-export contract.
+
+This patch makes the STATIC monolith (PXR_BUILD_MONOLITHIC=ON + BUILD_SHARED_LIBS
+=OFF) compile every core library with PXR_STATIC=1, so ARCH_EXPORT expands empty
+and no dllexport bakes into usd_m.lib. exports.def then becomes the complete
+export story on MSVC, exactly as the Nix version script is on ELF/Mach-O. The
+non-monolithic individual-static-library branch is unchanged.
+
+This is the MSVC-enclave analogue of nix/usd-embed.nix's export discipline and is
+applied by spike/msvc-enclave/apply-embed-patches.ps1.
+
+diff --git a/cmake/macros/Private.cmake b/cmake/macros/Private.cmake
+--- a/cmake/macros/Private.cmake
++++ b/cmake/macros/Private.cmake
+@@ -1301,6 +1301,13 @@
+     # API macros.
+     set(apiPublic "")
+     set(apiPrivate ${uppercaseName}_EXPORTS=1)
+     if(NOT _building_monolithic AND args_TYPE STREQUAL "STATIC")
+         set(apiPublic PXR_STATIC=1)
++    elseif(_building_monolithic AND NOT BUILD_SHARED_LIBS)
++        # AECO embed: static monolith. Compile every core library with empty
++        # ARCH_EXPORT (PXR_STATIC) so NO __declspec(dllexport) bakes into
++        # usd_m.lib. On PE/COFF the shim exports.def cannot SUBTRACT
++        # dllexport-marked symbols, so they must never be marked. (ELF/Mach-O
++        # get this from the shim version script; MSVC needs it at compile time.)
++        set(apiPublic PXR_STATIC=1)
+     endif()
+
+     # Final name.

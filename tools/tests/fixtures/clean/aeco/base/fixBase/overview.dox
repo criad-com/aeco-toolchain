@@ -1,0 +1,14 @@
+///
+/// \page fixBase_page_front FixBase : linter clean fixture
+/// \anchor mainpage_fixBase
+///
+/// FixBase is a minimal, fully-canonical library used by the
+/// aecoLintConventions test suite as the "clean" baseline: it passes every
+/// rule. Each red fixture beside it plants exactly one violation against
+/// this shape.
+///
+/// \section fixBase_debugCodes Debug codes
+///
+/// <ul>
+/// <li><b>FIXBASE_INIT</b> - initialization marker.</li>
+/// </ul>

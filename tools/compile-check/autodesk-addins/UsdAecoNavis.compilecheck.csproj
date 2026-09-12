@@ -1,0 +1,72 @@
+<!--
+  OFF-WINDOWS COMPILE-CHECK for the Navisworks add-in (addins-codex/UsdAecoNavis).
+
+  Purpose: instant CI compile-check of the Navisworks add-in sources without a
+  Windows host, by compiling them against the vendored Autodesk Navisworks API
+  reference assembly. This project NEVER runs; the add-in only *runs* on Windows
+  inside Navisworks Manage. Syntax/type/API-surface gate only.
+
+  Design notes:
+    * net48 is the Autodesk-required TFM for Navisworks 2024+. It compiles
+      reference-only on macOS/Linux via the Microsoft.NETFramework.ReferenceAssemblies
+      pack (same pack the real csproj already uses). Verified with .NET SDK
+      10.0.400 on arm64 mac.
+    * Reference-only: Autodesk.Navisworks.Api.dll is <Reference Private=false>;
+      proprietary, never redistributed. See vendor/autodesk-refs/README.md.
+    * Self-contained: compiles the add-in *.cs plus AecoLandingC.Interop *.cs in
+      place (no cross-repo ProjectReference / restore graph). Note the Interop
+      repo intentionally does NOT build net48 off-Windows, so compiling its
+      sources in place here is also what lets the net48 surface be checked at all
+      off-Windows.
+    * Sources located via $(AddinsRepo); default is a sibling addins-codex checkout.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <OutputType>Library</OutputType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- net48 has no C#12 runtime attrs; keep the analyzers from erroring on that. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <AddinsRepo Condition="'$(AddinsRepo)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\addins-codex</AddinsRepo>
+    <NavisSrc>$(AddinsRepo)\UsdAecoNavis</NavisSrc>
+    <InteropSrc>$(AddinsRepo)\AecoLandingC.Interop</InteropSrc>
+
+    <VendorDir Condition="'$(VendorDir)' == ''">$(MSBuildThisFileDirectory)..\..\..\vendor\autodesk-refs</VendorDir>
+    <NavisRefDir Condition="'$(NavisRefDir)' == ''">$(VendorDir)\navis-2027</NavisRefDir>
+  </PropertyGroup>
+
+  <Target Name="RequireVendoredNavisApi" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(NavisRefDir)\Autodesk.Navisworks.Api.dll')"
+           Text="Vendored Navisworks reference assembly not found under '$(NavisRefDir)'. Run tools/fetch-autodesk-refs.sh (or set NavisRefDir/VendorDir)." />
+    <Error Condition="!Exists('$(NavisSrc)')"
+           Text="Navisworks add-in sources not found at '$(NavisSrc)'. Set -p:AddinsRepo=/path/to/addins-codex (sibling checkout expected)." />
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="Autodesk.Navisworks.Api">
+      <HintPath>$(NavisRefDir)\Autodesk.Navisworks.Api.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="$(InteropSrc)\*.cs" />
+    <Compile Include="$(AddinsRepo)\Aeco.Addins.Core\*.cs" />
+    <Compile Include="$(NavisSrc)\*.cs" />
+  </ItemGroup>
+</Project>

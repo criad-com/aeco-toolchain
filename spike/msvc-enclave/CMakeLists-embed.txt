@@ -1,0 +1,112 @@
+# =====================================================================
+# CMakeLists-embed.txt — PRODUCTION static-embed build of AecoLandingC.dll
+# under MSVC. This is the exactly-19-export (ABI v2), self-contained shim.
+#
+# It is the enclave realisation of aeco-core's AECO_LANDINGC_BUILD_EMBED
+# stanza (aeco/base/aecoLandingC/CMakeLists.txt): the same aeco source closure
+# is compiled IN, PXR_STATIC makes every pxr/aeco ARCH_EXPORT macro expand
+# empty (so exports.def is the COMPLETE export story), and the STATIC
+# MONOLITHIC OpenUSD (usd_m.lib, internal namespace aecoEmbed_v1, python-free)
+# is force-loaded whole-archive so USD's registry constructors (Sdf file
+# formats, ARCH_CONSTRUCTOR init) survive the link.
+#
+# Contrast the sibling CMakeLists.txt (recon Variant A/B): that links the
+# SHARED prebuilt USD (usd_*.dll) + python311 and leaks ~44 C++ Aeco* symbols;
+# this links the static monolith and leaks nothing.
+#
+# USAGE (example-navis): copy aeco-core's aeco/base + aeco/vendor trees beside this
+# file (repo root on the include path), build the monolith first
+# (build-usd-monolith.cmd), then drive this with build-landingc-embed.cmd.
+# =====================================================================
+cmake_minimum_required(VERSION 3.24)   # $<LINK_LIBRARY:WHOLE_ARCHIVE,...>
+project(aecoLandingC_embed_msvc LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# The static monolith install produced by build-usd-monolith.cmd. Its include/
+# carries the python-FREE pxr/pxr.h (no boost.python glue), and its lib/ holds
+# usd_m.lib. TBB is reused from the prebuilt install (headers + import lib).
+set(USD_MONOLITH_ROOT "C:/usd-embed" CACHE PATH "Static monolithic OpenUSD install (usd_m)")
+set(OPENUSD_ROOT      "C:/OpenUSD"   CACHE PATH "Prebuilt USD install providing TBB headers/lib")
+
+set(_usd_m_inc "${USD_MONOLITH_ROOT}/include")
+set(_usd_m_lib "${USD_MONOLITH_ROOT}/lib/usd_m.lib")
+set(_tbb_inc   "${OPENUSD_ROOT}/include")
+set(_tbb_lib   "${OPENUSD_ROOT}/lib/tbb.lib")
+
+if (NOT EXISTS "${_usd_m_lib}")
+    message(FATAL_ERROR
+        "usd_m.lib not found at ${_usd_m_lib}. Build the static monolith first "
+        "with build-usd-monolith.cmd (this is the production usd-embed step).")
+endif()
+
+# The DLL source closure — byte-identical to aeco-core's embed stanza source
+# list (source-closure audit lives in aecoLandingC/CMakeLists.txt).
+add_library(AecoLandingC SHARED
+    aeco/base/aecoLandingC/aecoLandingC.cpp
+    aeco/base/aecoLanding/landingBuilder.cpp
+    aeco/base/aecoLanding/debugCodes.cpp
+    aeco/base/aecoBase/identity.cpp
+    aeco/base/aecoBase/contentHash.cpp
+    aeco/base/aecoBase/profile.cpp
+    aeco/base/aecoBase/semantics.cpp
+    aeco/base/aecoBase/version.cpp
+    aeco/base/aecoBase/debugCodes.cpp
+    aeco/vendor/crypto-algorithms/sha256.c
+    aeco/vendor/crypto-algorithms/sha1.c
+    aeco/base/aecoLandingC/exports.def
+)
+
+# PXR_STATIC: every pxr ARCH_EXPORT-based macro — INCLUDING the aeco
+# AECOLANDING_API / AECOBASE_API in their api.h — expands EMPTY, so no
+# __declspec(dllexport) rides on the compiled-in aeco class methods and the
+# .def is the complete export story => exactly the 19 aeco_landing_* symbols.
+# AECOLANDINGC_EXPORTS still marks the 19 C entry points for export. (Against a
+# STATIC USD this is correct; against shared USD it fails LNK1120 — recon
+# Variant B. See RECON.md.)
+target_compile_definitions(AecoLandingC PRIVATE
+    AECOLANDINGC_EXPORTS
+    PXR_STATIC
+    NOMINMAX
+    WIN32_LEAN_AND_MEAN
+    _CRT_SECURE_NO_WARNINGS
+    BOOST_ALL_NO_LIB
+)
+
+target_include_directories(AecoLandingC PRIVATE
+    ${CMAKE_SOURCE_DIR}
+    ${_usd_m_inc}
+    ${_tbb_inc}
+)
+
+if (MSVC)
+    target_compile_options(AecoLandingC PRIVATE /bigobj /EHsc /Zc:__cplusplus)
+endif()
+
+# Force-load the whole monolith so USD's registry constructors are not stripped
+# (Sdf file formats, ARCH_CONSTRUCTOR static init). On MSVC this expands to
+# /WHOLEARCHIVE:usd_m.lib. TBB is the one remaining THIRD-PARTY external the
+# monolith references (concurrent containers, outside libWork) — see README
+# "TBB". The Win32 system libs below are the ones pxr/base/arch + pxr/base/tf
+# link in a normal USD build and must be restated for this standalone DLL:
+#   Shlwapi  -> PathFindFileNameW / PathIsRelativeW / PathCombineW / …  (TfPath*)
+#   Dbghelp  -> SymInitialize / SymFromAddr / SymGetLineFromAddr64      (ArchGetAddressInfo)
+#   Ws2_32   -> gethostname                                            (ArchLogStackTrace)
+target_link_libraries(AecoLandingC PRIVATE
+    "$<LINK_LIBRARY:WHOLE_ARCHIVE,${_usd_m_lib}>"
+    "${_tbb_lib}"
+    Shlwapi
+    Dbghelp
+    Ws2_32
+)
+
+# Hidden visibility is the ELF/Mach-O half of the export discipline; on PE/COFF
+# the export set is governed entirely by exports.def (the .def is authoritative
+# because PXR_STATIC emptied every dllexport macro above).
+set_target_properties(AecoLandingC PROPERTIES
+    CXX_VISIBILITY_PRESET hidden
+    C_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN YES
+    OUTPUT_NAME AecoLandingC
+)

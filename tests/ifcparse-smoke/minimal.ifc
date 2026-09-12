@@ -1,0 +1,15 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ViewDefinition [ReferenceView_V1.2]'),'2;1');
+FILE_NAME('minimal.ifc','2026-08-11T00:00:00',('AECO'),('AECO'),'IfcOpenShell smoke fixture','aeco-toolchain','');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+DATA;
+#1=IFCPERSON($,$,'Smoke',$,$,$,$,$);
+#2=IFCORGANIZATION($,'AECO',$,$,$);
+#3=IFCPERSONANDORGANIZATION(#1,#2,$);
+#4=IFCAPPLICATION(#2,'0.1','aeco-toolchain smoke','AECO');
+#5=IFCOWNERHISTORY(#3,#4,$,.ADDED.,$,#3,#4,0);
+#6=IFCPROJECT('0J$yPqHBD1gQjRS0MZQ1V0',#5,'Smoke Project',$,$,$,$,$,$);
+ENDSEC;
+END-ISO-10303-21;

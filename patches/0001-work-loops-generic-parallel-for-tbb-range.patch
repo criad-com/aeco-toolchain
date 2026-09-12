@@ -1,0 +1,16 @@
+diff --git a/pxr/base/work/loops.h b/pxr/base/work/loops.h
+index f353fa8..d26f6df 100644
+--- a/pxr/base/work/loops.h
++++ b/pxr/base/work/loops.h
+@@ -285,9 +285,9 @@ WorkParallelForTBBRange(const RangeType &range, Fn &&callback)
+         };
+ 
+         WorkDispatcher dispatcher;
+-        RangeType range = range;
++        RangeType localRange = range;
+         dispatcher.Run(_RangeTask(
+-            dispatcher, range, std::forward<Fn>(callback)));
++            dispatcher, std::move(localRange), std::forward<Fn>(callback)));
+ #endif
+     } else {
+         // If concurrency is limited to 1, execute serially.

@@ -1,0 +1,37 @@
+Autodesk reference assemblies — vendored for OFF-WINDOWS COMPILE-CHECK ONLY.
+
+These are Autodesk PROPRIETARY binaries. They are reference-only inputs to a
+compile check (Reference with Private=false); they are NOT redistributed and
+NOT linked. See ../../vendor/autodesk-refs/README.md and the policy note.
+Fetched from the licensed installs on example-revit (Revit) and example-navis (Navisworks).
+
+Recorded: 2026-08-12 (UTC via hosts). SHA256 verified host==local after scp.
+
+revit-2027/  (source: example-revit, C:\Program Files\Autodesk\Revit 2027\)
+  RevitAPI.dll
+    Size            34000216 bytes
+    FileVersion     27.2.0.39
+    AssemblyVersion 27.2.0.0
+    ProductVersion  20260716_1515(x64)
+    SHA256          c86eb3e7a57e2b75187c34fb42c18b10a6ca73025f28b3db4b947b4d5dc8fd8e
+  RevitAPIUI.dll
+    Size            3342680 bytes
+    FileVersion     27.2.0.39
+    AssemblyVersion 27.2.0.0
+    ProductVersion  20260716_1515(x64)
+    SHA256          8846d6bae0fe2e84ac697dfa8521b70caf03bdc570a77d99e5f6189b80a8da4a
+
+navis-2027/  (source: example-navis, C:\Program Files\Autodesk\Navisworks Manage 2027\)
+  Autodesk.Navisworks.Api.dll
+    Size            4627288 bytes
+    FileVersion     24.0.1453.24
+    AssemblyVersion 24.0.0.0
+    ProductVersion  24.0.1453.24
+    PublicKeyToken  d85e58fa5af9b484
+    ImageRuntime    v4.0.30319 (.NET Framework 4.x)
+    SHA256          3b2bd5efa4117b92b13b0f217223ef5e2d914b890083af1dd1edc2087672a668
+
+Note: Navisworks 2027 (product year) ships assembly major version 24. This is
+expected: the Navis .NET API assembly version historically trails the product
+year. The csproj default NavisworksYear is 2026 (Simulate on some hosts); this
+compile-check pins the 2027 Manage API that example-navis actually carries.

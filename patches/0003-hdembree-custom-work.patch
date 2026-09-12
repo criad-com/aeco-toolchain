@@ -1,0 +1,25 @@
+diff --git a/pxr/imaging/plugin/hdEmbree/renderer.cpp b/pxr/imaging/plugin/hdEmbree/renderer.cpp
+index f28fc1b..4b14afc 100644
+--- a/pxr/imaging/plugin/hdEmbree/renderer.cpp
++++ b/pxr/imaging/plugin/hdEmbree/renderer.cpp
+@@ -21,2 +21,7 @@
+-#include "pxr/base/work/workTBB/tbb_version.h"
+-
++#if __has_include("pxr/base/work/workTBB/tbb_version.h")
++#include "pxr/base/work/workTBB/tbb_version.h"
++#if TBB_INTERFACE_VERSION_MAJOR < 12
++#define HDEMBREE_USE_LEGACY_TBB_SCHEDULER
++#endif
++#endif
++
+@@ -43,2 +48,2 @@
+-#if TBB_INTERFACE_VERSION_MAJOR < 12
+-
++#if defined(HDEMBREE_USE_LEGACY_TBB_SCHEDULER)
++
+@@ -534,4 +539,4 @@ HdEmbreeRenderer::Render(HdRenderThread *renderThread)
+ {
+-#if TBB_INTERFACE_VERSION_MAJOR < 12
++#if defined(HDEMBREE_USE_LEGACY_TBB_SCHEDULER)
+     _ScopedThreadScheduler scheduler;
+ #endif

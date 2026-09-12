@@ -1,0 +1,14 @@
+# Autodesk PROPRIETARY reference assemblies — NOT committed by default.
+# They are fetched on demand by tools/fetch-autodesk-refs.sh (scp from the
+# licensed Windows hosts). Only the text metadata in this dir is tracked.
+#
+# To switch to the "commit into this private repo" policy option (see README.md),
+# delete the two ignore lines below and `git add` the DLLs.
+*.dll
+**/*.dll
+
+# Keep the tracked metadata explicit (in case a broader ignore is added later).
+!README.md
+!MANIFEST.txt
+!SHA256SUMS
+!.gitignore

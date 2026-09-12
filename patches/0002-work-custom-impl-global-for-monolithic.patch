@@ -1,0 +1,12 @@
+diff --git a/pxr/base/work/CMakeLists.txt b/pxr/base/work/CMakeLists.txt
+index 4c4fa16..971775f 100644
+--- a/pxr/base/work/CMakeLists.txt
++++ b/pxr/base/work/CMakeLists.txt
+@@ -34 +34,6 @@ else()
+-    find_package("${work_impl_package}" CONFIG REQUIRED)
++    find_package("${work_impl_package}" CONFIG REQUIRED)
++    if (PXR_BUILD_MONOLITHIC)
++        # usd_m is finalized in the project root, so its external work
++        # dependency must be visible outside this subdirectory.
++        set_property(TARGET "${work_impl_target}" PROPERTY IMPORTED_GLOBAL TRUE)
++    endif()

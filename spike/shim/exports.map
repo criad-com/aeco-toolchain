@@ -1,0 +1,7 @@
+{
+    global:
+        aeco_embed_probe;
+        aeco_embed_namespace;
+    local:
+        *;
+};

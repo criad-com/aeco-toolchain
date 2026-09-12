@@ -1,0 +1,16 @@
+result
+result-*
+
+# Python bytecode from the linter + its tests
+__pycache__/
+*.pyc
+
+# .NET compile-check intermediates (tools/compile-check/**)
+bin/
+obj/
+
+# Local input overrides and build reports
+flake.lock
+out/
+.pytest_cache/
+STEERING.md

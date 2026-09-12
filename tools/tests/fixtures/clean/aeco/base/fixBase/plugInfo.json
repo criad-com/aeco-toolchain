@@ -1,0 +1,27 @@
+{
+    "Plugins": [
+        {
+            "Info": {
+                "Validators": {
+                    "FixBaseLabelChecker": {
+                        "doc": "Validates the widget label is non-empty.",
+                        "schemaTypes": [
+                            "UsdGeomImageable"
+                        ],
+                        "keywords": [
+                            "fixBase"
+                        ]
+                    },
+                    "keywords": [
+                        "fixBaseValidators"
+                    ]
+                }
+            },
+            "LibraryPath": "@PLUG_INFO_LIBRARY_PATH@",
+            "Name": "fixBase",
+            "ResourcePath": "@PLUG_INFO_RESOURCE_PATH@",
+            "Root": "@PLUG_INFO_ROOT@",
+            "Type": "library"
+        }
+    ]
+}
