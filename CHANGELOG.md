@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 — 2026-09-13
+
+- public hygiene: internal CI and private references removed
+
 ## 0.4.0 — 2026-09-12
 
 - public names → github.com/criad-com.
@@ -40,7 +44,7 @@
   consuming generated schema resources from flake inputs is explicitly valid.
   Red fixtures now plant schema-type registration and retain `schema.usda`;
   clean fixtures cover generated resources and non-schema plugin types.
-- Declared the studio Harmonia binary cache in the flake's `nixConfig` and
+- Declared the organization's binary cache in the flake's `nixConfig` and
   documented opt-in flake trust plus permanent `nix.conf` configuration for
   managed fleet and runner machines.
 
@@ -178,7 +182,7 @@
 
 ## P0-1 — initial toolchain flake
 
-- Flake input `openusd` pinned to `aeco/openusd` @ `47154dc7b5e2` (dev, 0.26.11).
+- Flake input `openusd` pinned to the deployment mirror @ `47154dc7b5e2` (dev, 0.26.11).
 - `packages.usd-dev`: OpenUSD core build (shared, python3, no imaging, C++17)
   on the upstream TBB Work backend; `packages.usd-dev-taskflow` variant on
   taskflow 3.10.0 (`PXR_WORK_IMPL=workTaskflowExample`) for the future

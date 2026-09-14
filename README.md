@@ -3,7 +3,7 @@
 Toolchain hub for the AECO org (Nix-first). Pins the org-wide OpenUSD source
 and provides the canonical OpenUSD build every downstream repo consumes.
 
-Version: **0.4.0**. Public repository: [criad-com/aeco-toolchain](https://github.com/criad-com/aeco-toolchain).
+Version: **0.4.1**. Public repository: [criad-com/aeco-toolchain](https://github.com/criad-com/aeco-toolchain).
 
 Pinned OpenUSD: `PixarAnimationStudios/OpenUSD` @ `47154dc7b5e28df623745495a7a508b69535ba24`
 (dev, post-26.08). Target platform: aarch64-darwin (structured for
@@ -143,15 +143,16 @@ the LGPL's reverse-engineering/replacement rights.
 
 The blocking check compiles through `IfcOpenShell::IfcParse`, parses the tiny
 554-byte hermetic `tests/ifcparse-smoke/minimal.ifc`, and reports exactly one
-IfcRoot-derived entity. A supplemental read-only studio run parsed the 6.9 MB
-`demo-datacentre-01.ifc` and counted 25,641 IfcRoot-derived entities in 0.44s.
+IfcRoot-derived entity. A supplemental read-only run on the aarch64-darwin
+builder parsed the 6.9 MB `demo-datacentre-01.ifc` and counted 25,641
+IfcRoot-derived entities in 0.44s.
 
 On aarch64-darwin, `nix path-info -S` reports a standalone closure of
 255,910,448 bytes (244.06 MiB). Adding it beside either existing USD variant
 adds 208,751,168 bytes (199.08 MiB) after shared runtime paths: `usd-dev`
 1,732,470,104 → 1,941,221,272 bytes; `usd-dev-taskflow` 1,742,883,760 →
 1,951,634,928 bytes. A source/dependency-cached compile and install took
-2m13s on the studio aarch64-darwin builder.
+2m13s on the aarch64-darwin builder.
 
 ## Native geometry
 
@@ -381,7 +382,7 @@ being linted. This runs as an H0 check on every PR (plan §2). aeco-core
 ## Consuming from another repo
 
 ```nix
-inputs.aeco-toolchain.url = "github:criad-com/aeco-toolchain?ref=v0.4.0";
+inputs.aeco-toolchain.url = "github:criad-com/aeco-toolchain?ref=v0.4.1";
 # then: aeco-toolchain.packages.${system}.usd-dev
 #       aeco-toolchain.packages.${system}.ifcopenshell-cpp
 #       aeco-toolchain.packages.${system}.poppler
@@ -400,10 +401,15 @@ Fetching the private mirrors requires a `~/.netrc` entry for the configured Git 
 
 ## Off-Windows compile-check for the Windows add-ins (P4)
 
-`tools/compile-check/autodesk-addins/` compiles the `addins-codex` Revit and
-Navisworks add-ins **reference-only** against **vendored Autodesk reference
+`tools/compile-check/autodesk-addins/` compiles a checkout of the Revit and
+Navisworks add-in sources **reference-only** against **vendored Autodesk reference
 assemblies**, on macOS/Linux — no Windows host — giving the fleet an instant
 compile gate. The add-ins still only **run** on Windows; this is compile-only.
+
+Select the checkout with `--addins-repo`, `AddinsRepo`, or `ADDINS_REPO`;
+the default is a sibling directory named `autodesk-addins`.
+
+CI runs on the deployment service; it is not part of this repository.
 
 - `tools/fetch-autodesk-refs.sh` — scp's `RevitAPI.dll`/`RevitAPIUI.dll` (Revit
   2027, example-revit) and `Autodesk.Navisworks.Api.dll` (Navisworks 2027, example-navis) into

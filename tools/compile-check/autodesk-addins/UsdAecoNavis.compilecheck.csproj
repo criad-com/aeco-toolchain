@@ -1,5 +1,5 @@
 <!--
-  OFF-WINDOWS COMPILE-CHECK for the Navisworks add-in (addins-codex/UsdAecoNavis).
+  OFF-WINDOWS COMPILE-CHECK for the Navisworks add-in (UsdAecoNavis).
 
   Purpose: instant CI compile-check of the Navisworks add-in sources without a
   Windows host, by compiling them against the vendored Autodesk Navisworks API
@@ -18,7 +18,9 @@
       repo intentionally does NOT build net48 off-Windows, so compiling its
       sources in place here is also what lets the net48 surface be checked at all
       off-Windows.
-    * Sources located via $(AddinsRepo); default is a sibling addins-codex checkout.
+    * AddinsRepo selects a checkout of the Revit and Navisworks add-in sources.
+      Override with -p:AddinsRepo=PATH or ADDINS_REPO; the default is a sibling
+      directory named autodesk-addins.
 -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -34,7 +36,8 @@
     <!-- net48 has no C#12 runtime attrs; keep the analyzers from erroring on that. -->
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
-    <AddinsRepo Condition="'$(AddinsRepo)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\addins-codex</AddinsRepo>
+    <AddinsRepo Condition="'$(AddinsRepo)' == ''">$(ADDINS_REPO)</AddinsRepo>
+    <AddinsRepo Condition="'$(AddinsRepo)' == ''">$(MSBuildThisFileDirectory)..\..\..\..\autodesk-addins</AddinsRepo>
     <NavisSrc>$(AddinsRepo)\UsdAecoNavis</NavisSrc>
     <InteropSrc>$(AddinsRepo)\AecoLandingC.Interop</InteropSrc>
 
@@ -46,7 +49,7 @@
     <Error Condition="!Exists('$(NavisRefDir)\Autodesk.Navisworks.Api.dll')"
            Text="Vendored Navisworks reference assembly not found under '$(NavisRefDir)'. Run tools/fetch-autodesk-refs.sh (or set NavisRefDir/VendorDir)." />
     <Error Condition="!Exists('$(NavisSrc)')"
-           Text="Navisworks add-in sources not found at '$(NavisSrc)'. Set -p:AddinsRepo=/path/to/addins-codex (sibling checkout expected)." />
+           Text="Navisworks add-in sources not found at '$(NavisSrc)'. Set -p:AddinsRepo=PATH or ADDINS_REPO to a checkout of the Revit and Navisworks add-in sources (default: sibling autodesk-addins)." />
   </Target>
 
   <ItemGroup>

@@ -13,7 +13,7 @@ table below), then asserts the linter reds with that violation's rule id —
 and with *only* that rule — and that the finding's message carries the
 expected substring (so near-miss findings cannot masquerade).
 
-The P0-9 review round (Codex, PR #3) constructed six evasions; each of those
+A review round constructed six evasions; each of those
 constructions is reproduced here verbatim as a red or clean-side case, so the
 evasion corpus is permanent:
 

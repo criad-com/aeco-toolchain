@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # run-compile-check.sh — off-Windows compile-check for the aeco Windows add-ins.
 #
-# Compiles addins-codex/{UsdAecoRevit,UsdAecoNavis} (reference-only) against the
+# Compiles a checkout of the Revit and Navisworks add-in sources against the
 # vendored Autodesk DLLs, on macOS/Linux, with no Windows host. Prints PASS/FAIL
 # per add-in. This is a syntax/type/API-surface gate; the add-ins still only RUN
 # on Windows.
@@ -16,14 +16,15 @@
 # Usage:
 #   run-compile-check.sh [--install-sdk] [--fetch] [--addins-repo PATH] [--revit-only|--navis-only]
 #
-# --addins-repo defaults to a sibling checkout of addins-codex next to this repo.
+# --addins-repo / ADDINS_REPO select the source checkout (reference-only).
+# The default is a sibling directory named autodesk-addins.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$here/../../.." && pwd)"
 
-# Default: addins-codex is a sibling of this repo's checkout.
-ADDINS_REPO="${ADDINS_REPO:-$(cd "$repo_root/.." && pwd)/addins-codex}"
+# Default: autodesk-addins is a sibling of this repo's checkout.
+ADDINS_REPO="${ADDINS_REPO:-$(cd "$repo_root/.." && pwd)/autodesk-addins}"
 install_sdk=0
 do_fetch=0
 targets=(revit navis)
@@ -40,6 +41,13 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+echo "addins repo: $ADDINS_REPO"
+if [[ ! -d "$ADDINS_REPO" ]]; then
+  echo "ERROR: a checkout of the Revit and Navisworks add-in sources was not found at $ADDINS_REPO (pass --addins-repo PATH or set ADDINS_REPO)." >&2
+  exit 4
+fi
+ADDINS_REPO="$(cd "$ADDINS_REPO" && pwd)"
 
 # --- locate or install dotnet ---
 if command -v dotnet >/dev/null 2>&1; then
@@ -64,12 +72,6 @@ echo "dotnet: $("$DOTNET" --version) at $DOTNET"
 # --- ensure vendored DLLs ---
 if [[ "$do_fetch" == 1 ]]; then
   "$repo_root/tools/fetch-autodesk-refs.sh"
-fi
-
-echo "addins repo: $ADDINS_REPO"
-if [[ ! -d "$ADDINS_REPO" ]]; then
-  echo "ERROR: addins-codex checkout not found at $ADDINS_REPO (pass --addins-repo PATH)." >&2
-  exit 4
 fi
 
 proj_for() {

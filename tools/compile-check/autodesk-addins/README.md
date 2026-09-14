@@ -1,31 +1,29 @@
 # Off-Windows compile-check for the aeco Windows add-ins
 
-Gives fleet CI an **instant compile-check** of the Revit and Navisworks add-ins
+Gives CI an **instant compile-check** of the Revit and Navisworks add-ins
 **without a Windows host**, by compiling their sources (reference-only) against
 the vendored Autodesk reference assemblies in
 [`../../../vendor/autodesk-refs/`](../../../vendor/autodesk-refs/).
 
-**This is loop #3: compile-only.** The add-ins still only **run** on Windows
+**This is compile-only.** The add-ins still only **run** on Windows
 inside Revit / Navisworks. This gate catches syntax, type, and Autodesk-API-surface
 regressions early; it does not (and cannot) exercise runtime behaviour.
 
 ## What it checks
 
-| Project | Source repo | TFM | Autodesk refs |
+| Project | Sources under `AddinsRepo` | TFM | Autodesk refs |
 |---------|-------------|-----|---------------|
-| `UsdAecoRevit.compilecheck.csproj` | `addins-codex/UsdAecoRevit` (+ `AecoLandingC.Interop`) | `net10.0-windows` | RevitAPI, RevitAPIUI |
-| `UsdAecoNavis.compilecheck.csproj` | `addins-codex/UsdAecoNavis` (+ `AecoLandingC.Interop`) | `net48` | Autodesk.Navisworks.Api |
+| `UsdAecoRevit.compilecheck.csproj` | `UsdAecoRevit` (+ `AecoLandingC.Interop`, `Aeco.Addins.Core`) | `net10.0-windows` | RevitAPI, RevitAPIUI |
+| `UsdAecoNavis.compilecheck.csproj` | `UsdAecoNavis` (+ `AecoLandingC.Interop`, `Aeco.Addins.Core`) | `net48` | Autodesk.Navisworks.Api |
 
 Each compile-check project compiles the add-in's `*.cs` **and** the
 `AecoLandingC.Interop` `*.cs` in place (rather than via a cross-repo
 `ProjectReference`), so the check is self-contained and isolates the single
 question: *do the add-in sources still type-check against the Autodesk API?*
 
-A third project, `usdaeco-codex/integrations/revit/UsdAecoRevit` (a separate
-repo, `net10.0-windows` + WPF, no Interop dependency), was also verified to
-compile cleanly against the same vendored Revit DLLs. It is not wired here
-because it lives in a different repo; point a copy of the Revit compile-check at
-it with `-p:AddinsRepo=`/`-p:RevitSrc=` if/when desired.
+Select a checkout of the Revit and Navisworks add-in sources with
+`--addins-repo`, the MSBuild property `AddinsRepo`, or the environment variable
+`ADDINS_REPO`. The default is a sibling directory named `autodesk-addins`.
 
 ## Prerequisites
 
@@ -44,27 +42,29 @@ Cross-platform targeting works because:
 ## Run it
 
 ```bash
-# Both add-ins; addins-codex assumed to be a sibling checkout of this repo.
+# Both add-ins; autodesk-addins assumed to be a sibling checkout of this repo.
 tools/compile-check/autodesk-addins/run-compile-check.sh
 
 # Install a local SDK first (no sudo) and fetch the DLLs from the hosts, then check:
 tools/compile-check/autodesk-addins/run-compile-check.sh --install-sdk --fetch
 
-# Point at an addins-codex checkout elsewhere, Navis only:
+# Select a checkout of the Revit and Navisworks add-in sources, Navis only:
 tools/compile-check/autodesk-addins/run-compile-check.sh \
-  --addins-repo /path/to/addins-codex --navis-only
+  --addins-repo ../autodesk-addins --navis-only
 ```
 
 Or invoke a single project directly:
 
 ```bash
+export ADDINS_REPO="$(cd ../autodesk-addins && pwd)"
 dotnet build tools/compile-check/autodesk-addins/UsdAecoRevit.compilecheck.csproj \
-  -c Release -p:AddinsRepo=/path/to/addins-codex
+  -c Release -p:AddinsRepo="$ADDINS_REPO"
 ```
 
 ### Knobs (MSBuild properties)
 
-- `AddinsRepo` — path to the `addins-codex` checkout (default: sibling of this repo).
+- `AddinsRepo` — a checkout of the Revit and Navisworks add-in sources (default:
+  `ADDINS_REPO` if set, otherwise the sibling directory `autodesk-addins`).
 - `VendorDir` — vendored-refs root (default: `vendor/autodesk-refs`).
 - `RevitRefDir` / `NavisRefDir` — override a single product's ref dir.
 
@@ -77,9 +77,4 @@ sources are clean for compile off-Windows.
 
 ## Wiring into CI
 
-See [`.gitea/workflows/addins-compile-check.yml`](../../../.gitea/workflows/addins-compile-check.yml)
-for a Linux runner job. Because the default policy does **not** commit the
-proprietary DLLs, that job must either (a) `scp` them from the hosts via
-`tools/fetch-autodesk-refs.sh` (runner needs keyless SSH), or (b) restore them
-from an artifact store — see the policy note in
-[`../../../vendor/autodesk-refs/README.md`](../../../vendor/autodesk-refs/README.md).
+CI runs on the deployment service; it is not part of this repository.
